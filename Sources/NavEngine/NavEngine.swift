@@ -169,6 +169,13 @@ struct NavigationControllerHost<T: Equatable, Screen: View>: UIViewControllerRep
     func updateUIViewController(_ navigation: UINavigationController, context: Context) {
         navigation.topViewController?.navigationController?.navigationBar.tintColor = navigationStyle.backButtonTint
         navigation.navigationBar.isHidden = navigationStyle.isHidden
+        
+        if let topVC = navigation.topViewController, let index = navigation.viewControllers.firstIndex(of: topVC), index > 0 {
+            let previousVC = navigation.viewControllers[index - 1]
+            let backItem = UIBarButtonItem()
+            backItem.title = navigationStyle.backButtonTitle
+            previousVC.navigationItem.backBarButtonItem = backItem
+        }
     }
     
     static func dismantleUIViewController(_ navigation: UINavigationController, coordinator: ()) {
@@ -205,9 +212,14 @@ extension View {
     public func uipNavigationTitle(_ title: String) -> some View {
         return modifier(NavTitleModifier(title: title))
     }
+    
     public func uiNavigationBackButtonTint(_ tint: UIColor) -> some View {
         return modifier(BackButtonTintModifier(tint: tint))
     }
+    
+    public func uiNavigationBackButtonTitle(_ title: String) -> some View {
+            return modifier(BackButtonTitleModifier(title: title))
+        }
 }
 
 private struct NavigationTitleKey: EnvironmentKey {
@@ -251,10 +263,12 @@ public class NavigationStyle: ObservableObject {
     @Published public var isHidden = false
     @Published public var title = ""
     @Published public var backButtonTint = UIColor.tintColor
+    @Published public var backButtonTitle = ""
     
     public var isHiddenOwner: String = ""
     public var titleOwner: String = ""
     public var backButtonTintOwner: String = ""
+    public var backButtonTitleOwner: String = ""
     
     public init() {}
 }
@@ -352,6 +366,40 @@ struct NavHiddenModifier: ViewModifier {
                 if navStyle.isHiddenOwner == id {
                     navStyle.isHidden = initialValue
                     navStyle.isHiddenOwner = ""
+                }
+            }
+    }
+}
+
+struct BackButtonTitleModifier: ViewModifier {
+    let title: String
+
+    @State var id = UUID().uuidString
+    @State var initialValue: String = ""
+
+    @Environment(\.uipNavigationStyle) var navStyle
+
+    init(title: String) {
+        self.title = title
+    }
+
+    func body(content: Content) -> some View {
+        if navStyle.backButtonTitleOwner == id && navStyle.backButtonTitle != title {
+            DispatchQueue.main.async {
+                navStyle.backButtonTitle = title
+            }
+        }
+
+        return content
+            .onAppear {
+                initialValue = navStyle.backButtonTitle
+                navStyle.backButtonTitle = title
+                navStyle.backButtonTitleOwner = id
+            }
+            .onDisappear {
+                if navStyle.backButtonTitleOwner == id {
+                    navStyle.backButtonTitle = initialValue
+                    navStyle.backButtonTitleOwner = ""
                 }
             }
     }
