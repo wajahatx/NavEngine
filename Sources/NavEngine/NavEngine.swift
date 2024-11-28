@@ -361,9 +361,17 @@ class NavEngineHostingViewController<Content: View>: UIHostingController<Content
     var titleText: String?
     override func viewDidLoad() {
         super.viewDidLoad()
+        addBlurEffect()
         if let titleText = titleText {
             self.title = titleText
         }
+    }
+    func addBlurEffect() {
+        let bounds = self.navigationController?.navigationBar.bounds
+        let visualEffectView = UIVisualEffectView(effect: UIBlurEffect(style: .light))
+        visualEffectView.frame = bounds ?? CGRect.zero
+        visualEffectView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        self.navigationController?.navigationBar.addSubview(visualEffectView)
     }
 }
 
