@@ -358,12 +358,103 @@ struct NavHiddenModifier: ViewModifier {
 }
 
 class NavEngineHostingViewController<Content: View>: UIHostingController<Content> {
+    private let popGestureDelegate = InteractivePopGestureDelegate()
     var titleText: String?
     override func viewDidLoad() {
         super.viewDidLoad()
+        setupInteractivePopGestureCallbacks()
         if let titleText = titleText {
             self.title = titleText
         }
     }
+    
+    private func setupInteractivePopGestureCallbacks() {
+        guard let navigationController = self.navigationController else { return }
+        navigationController.delegate = popGestureDelegate
+        navigationController.interactivePopGestureRecognizer?.delegate = popGestureDelegate
+
+        popGestureDelegate.onInteractivePopStarted = { [weak self] in
+            print("Interactive pop gesture started")
+            self?.view.endEditing(true) // Dismiss keyboard
+        }
+
+        popGestureDelegate.onInteractivePopCancelled = { [weak self] in
+            print("Interactive pop gesture cancelled")
+            self?.reopenKeyboardIfNeeded() // Reopen keyboard
+        }
+
+        popGestureDelegate.onInteractivePopCompleted = {
+            print("Interactive pop gesture completed")
+            // No need to reopen the keyboard if the gesture completes
+        }
+    }
+
+    private func reopenKeyboardIfNeeded() {
+        // Assuming you have a reference to your text field or input view
+        if let textField = self.view.findFirstResponder() as? UITextField {
+            textField.becomeFirstResponder()
+        }
+    }
+
+}
+extension UIView {
+    // Helper to find the first responder
+    func findFirstResponder() -> UIView? {
+        if self.isFirstResponder {
+            return self
+        }
+        for subview in self.subviews {
+            if let responder = subview.findFirstResponder() {
+                return responder
+            }
+        }
+        return nil
+    }
 }
 
+class InteractivePopGestureDelegate: NSObject, UINavigationControllerDelegate, UIGestureRecognizerDelegate {
+    var onInteractivePopStarted: (() -> Void)?
+    var onInteractivePopCancelled: (() -> Void)?
+    var onInteractivePopCompleted: (() -> Void)?
+
+    private var isInteractivePopInProgress = false
+
+    func navigationController(_ navigationController: UINavigationController, didShow viewController: UIViewController, animated: Bool) {
+        if let coordinator = navigationController.transitionCoordinator, coordinator.isInteractive {
+            coordinator.notifyWhenInteractionChanges { context in
+                if context.isCancelled {
+                    // User cancelled the pop gesture
+                    self.isInteractivePopInProgress = false
+                    self.onInteractivePopCancelled?()
+                } else {
+                    // Pop gesture completed successfully
+                    self.isInteractivePopInProgress = false
+                    self.onInteractivePopCompleted?()
+                }
+            }
+        }
+    }
+
+    func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        if let navigationController = gestureRecognizer.view?.findNavigationController(),
+           navigationController.viewControllers.count > 1 {
+            isInteractivePopInProgress = true
+            onInteractivePopStarted?()
+        }
+        return true
+    }
+}
+
+extension UIView {
+    /// Recursively find the nearest `UINavigationController` in the view hierarchy.
+    func findNavigationController() -> UINavigationController? {
+        var responder: UIResponder? = self
+        while let r = responder {
+            if let navController = r as? UINavigationController {
+                return navController
+            }
+            responder = r.next
+        }
+        return nil
+    }
+}
