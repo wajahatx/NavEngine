@@ -375,7 +375,7 @@ class NavEngineHostingViewController<Content: View>: UIHostingController<Content
 
         popGestureDelegate.onInteractivePopStarted = { [weak self] in
             print("Interactive pop gesture started")
-            self?.view.endEditing(true) // Dismiss keyboard
+            self?.view.resignFirstResponder() // Dismiss keyboard
         }
 
         popGestureDelegate.onInteractivePopCancelled = { [weak self] in
