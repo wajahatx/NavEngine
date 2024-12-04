@@ -14,6 +14,15 @@ public struct NavEngineHost<T: Equatable, Screen: View>: View {
     @ViewBuilder
     let routeMap: (T) -> Screen
     
+    /**
+     Initializes a `NavEngineHost` view.
+
+     - Parameters:
+       - engine: An instance of `NavEngine` that manages the navigation state.
+       - routeMap: A closure that maps a route of type `T` to a `Screen` view.
+     
+     - Note: The route map closure determines the view displayed for each route in the navigation engine.
+     */
     public init(_ engine: NavEngine<T>, @ViewBuilder _ routeMap: @escaping (T) -> Screen) {
         self.engine = engine
         self.routeMap = routeMap

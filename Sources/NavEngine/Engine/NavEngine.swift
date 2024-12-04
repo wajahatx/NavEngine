@@ -19,6 +19,13 @@ public class NavEngine<T: Equatable>: ObservableObject {
     var onPush: ((EngineRoute<T>) -> Void)?
     var onPopLast: ((Int, Bool) -> Void)?
 
+    /**
+     Initializes a new instance of the `NavEngine`.
+
+     - Parameters:
+       - initial: An optional `EngineRoute` to be added as the initial route. Defaults to `nil`.
+       - debug: A Boolean value indicating whether debug logging is enabled. Defaults to `false`.
+     */
     public init(initial: EngineRoute<T>? = nil, debug: Bool = false) {
         logger = debug ? DebugLog() : EmptyLog()
         logger.log(" - engine Initialized.")
