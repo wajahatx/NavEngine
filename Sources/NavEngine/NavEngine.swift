@@ -28,13 +28,27 @@ class EmptyLog: Logger {
 
 public struct EngineRoute<T: Equatable>: Equatable {
     let route: T
-    let title: String
-    
-    public init(route: T, title: String) {
+    let title: TitleContent
+
+    public enum TitleContent: Equatable {
+        case text(String)
+        case view(AnyView)
+
+        public static func == (lhs: TitleContent, rhs: TitleContent) -> Bool {
+            switch (lhs, rhs) {
+            case let (.text(l), .text(r)): return l == r
+            case let (.view(l), .view(r)): return false
+            default: return false
+            }
+        }
+    }
+
+    public init(route: T, title: TitleContent) {
         self.route = route
         self.title = title
     }
 }
+
 public class NavEngine<T: Equatable>: ObservableObject {
     private let logger: Logger
     private var _routes: [EngineRoute<T>] = []
@@ -99,7 +113,11 @@ public class NavEngine<T: Equatable>: ObservableObject {
            }
        }
 
-    
+    public func updateRoute(at index: Int, with newRoute: EngineRoute<T>) {
+        guard _routes.indices.contains(index) else { return }
+        _routes[index] = newRoute
+        objectWillChange.send()
+    }
 }
 public struct NavEngineHost<T: Equatable, Screen: View>: View {
     @StateObject var navigationStyle = NavigationStyle()
@@ -123,6 +141,7 @@ public struct NavEngineHost<T: Equatable, Screen: View>: View {
         .environment(\.uipNavigationStyle, navigationStyle)
     }
 }
+
 struct NavigationControllerHost<T: Equatable, Screen: View>: UIViewControllerRepresentable {
     @ObservedObject var navigationStyle: NavigationStyle
     let engine: NavEngine<T>
@@ -141,18 +160,24 @@ struct NavigationControllerHost<T: Equatable, Screen: View>: UIViewControllerRep
         }
         
         for routeWithTitle in engine.routes {
-            let vc = NavEngineHostingViewController(rootView: routeMap(routeWithTitle.route))
-            vc.titleText = routeWithTitle.title
+            let vc = NavEngineHostingViewController<T, Screen>(rootView: routeMap(routeWithTitle.route))
+            vc.titleContent = routeWithTitle.title
             navigation.pushViewController(vc, animated: true)
         }
         
-        engine.onPush = { routeWithTitle in
-            let vc = NavEngineHostingViewController(rootView: routeMap(routeWithTitle.route))
-            vc.titleText = routeWithTitle.title
+        engine.onPush = { routeWithTitleContent in
+            let vc = NavEngineHostingViewController<T, Screen>(rootView: routeMap(routeWithTitleContent.route))
+            vc.titleContent = routeWithTitleContent.title
+
+            switch routeWithTitleContent.title {
+            case .text(let title):
+                navigation.topViewController?.navigationItem.backBarButtonItem = UIBarButtonItem(title: title, style: .plain, target: nil, action: nil)
+            case .view:
+                navigation.topViewController?.navigationItem.backBarButtonItem = UIBarButtonItem(title: "Back", style: .plain, target: nil, action: nil)
+            }
+
             navigation.pushViewController(vc, animated: true)
         }
-        
-     
         
         engine.onPopLast = { numToPop, animated in
             if numToPop == navigation.viewControllers.count {
@@ -357,12 +382,30 @@ struct NavHiddenModifier: ViewModifier {
     }
 }
 
-class NavEngineHostingViewController<Content: View>: UIHostingController<Content> {
-    var titleText: String?
+class NavEngineHostingViewController<T: Equatable, Content: View>: UIHostingController<Content> {
+    var titleContent: EngineRoute<T>.TitleContent?
+    private var titleHostingController: UIHostingController<AnyView>?
+
     override func viewDidLoad() {
         super.viewDidLoad()
-        if let titleText = titleText {
-            self.title = titleText
+        updateTitleContent()
+    }
+
+    func updateTitleContent() {
+        switch titleContent {
+        case .text(let title):
+            self.title = title
+            self.navigationItem.titleView = nil
+        case .view(let titleView):
+            if titleHostingController == nil {
+                titleHostingController = UIHostingController(rootView: titleView)
+                titleHostingController?.view.backgroundColor = .clear
+                navigationItem.titleView = titleHostingController?.view
+            } else {
+                titleHostingController?.rootView = titleView
+            }
+        case .none:
+            break
         }
     }
 }
