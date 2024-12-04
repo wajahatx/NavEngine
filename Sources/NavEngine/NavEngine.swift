@@ -51,7 +51,7 @@ public struct EngineRoute<T: Equatable>: Equatable {
 
 public class NavEngine<T: Equatable>: ObservableObject {
     private let logger: Logger
-    private var _routes: [EngineRoute<T>] = []
+    @Published private(set) var _routes: [EngineRoute<T>] = []
     
     public var routes: [EngineRoute<T>] {
         return _routes
@@ -113,10 +113,13 @@ public class NavEngine<T: Equatable>: ObservableObject {
            }
        }
 
+
     public func updateRoute(at index: Int, with newRoute: EngineRoute<T>) {
         guard _routes.indices.contains(index) else { return }
         _routes[index] = newRoute
-        objectWillChange.send()
+        logger.log(" - Updating route at index \(index) with \(newRoute)")
+        objectWillChange.send() // Notify subscribers of changes
+        onPush?(newRoute) // Trigger UI updates
     }
 }
 public struct NavEngineHost<T: Equatable, Screen: View>: View {
@@ -194,6 +197,9 @@ struct NavigationControllerHost<T: Equatable, Screen: View>: UIViewControllerRep
     func updateUIViewController(_ navigation: UINavigationController, context: Context) {
         navigation.topViewController?.navigationController?.navigationBar.tintColor = navigationStyle.backButtonTint
         navigation.navigationBar.isHidden = navigationStyle.isHidden
+        if let vc = navigation.topViewController as? NavEngineHostingViewController<T, Screen> {
+                    vc.updateTitle(engine.routes.last?.title ?? .text(""))
+                }
     }
     
     static func dismantleUIViewController(_ navigation: UINavigationController, coordinator: ()) {
@@ -407,6 +413,11 @@ class NavEngineHostingViewController<T: Equatable, Content: View>: UIHostingCont
         case .none:
             break
         }
+    }
+
+    func updateTitle(_ newTitleContent: EngineRoute<T>.TitleContent) {
+        titleContent = newTitleContent
+        updateTitleContent()
     }
 }
 
