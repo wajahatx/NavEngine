@@ -36,10 +36,22 @@ public struct NavigationConfig: Equatable {
  */
 public struct TitleConfiguration: Equatable {
     /// The title text to display in the navigation bar.
-    let title: String?
+     let title: String?
     
     /// The display mode for the back button in the navigation bar.
-    let backButtonDisplayMode: UINavigationItem.BackButtonDisplayMode
+     let backButtonDisplayMode: UINavigationItem.BackButtonDisplayMode
+    
+    /**
+     Initializes a new `TitleConfiguration` instance.
+     
+     - Parameters:
+       - title: The title text to display in the navigation bar. Pass `nil` for no title.
+       - backButtonDisplayMode: The display mode for the back button in the navigation bar.
+     */
+    public init(title: String?, backButtonDisplayMode: UINavigationItem.BackButtonDisplayMode) {
+        self.title = title
+        self.backButtonDisplayMode = backButtonDisplayMode
+    }
 }
 
 /**
