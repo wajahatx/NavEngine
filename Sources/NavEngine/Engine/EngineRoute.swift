@@ -25,7 +25,7 @@ public struct NavigationConfig: Equatable {
        - titleContent: An `AnyView` representing the custom title content for the navigation bar.
      */
     @MainActor
-    public init(titleSettings: TitleConfiguration?, titleContent: AnyView?) {
+    public init(titleSettings: TitleConfiguration? = nil, titleContent: AnyView? = nil) {
         self.titleSettings = titleSettings
         self.titleContent = titleContent?.convertToUIView()
     }
