@@ -57,7 +57,7 @@ struct NavigationControllerHost<T: Equatable, Screen: View>: UIViewControllerRep
         
         for routeWithTitle in engine.routes {
             let vc = NavEngineHostingViewController(rootView: routeMap(routeWithTitle.route))
-            vc.title = routeWithTitle.navigationConfig.titleSettings?.title ?? ""
+            vc.navigationItem.title = routeWithTitle.navigationConfig.titleSettings?.title ?? ""
             vc.navigationItem.backButtonDisplayMode = routeWithTitle.navigationConfig.titleSettings?.backButtonDisplayMode ?? .default
             vc.navigationItem.titleView = routeWithTitle.navigationConfig.titleContent
             navigation.pushViewController(vc, animated: true)
@@ -65,7 +65,7 @@ struct NavigationControllerHost<T: Equatable, Screen: View>: UIViewControllerRep
         
         engine.onPush = { routeWithTitle in
             let vc = NavEngineHostingViewController(rootView: routeMap(routeWithTitle.route))
-            vc.title = routeWithTitle.navigationConfig.titleSettings?.title ?? ""
+            vc.navigationItem.title = routeWithTitle.navigationConfig.titleSettings?.title ?? ""
             vc.navigationItem.backButtonDisplayMode = routeWithTitle.navigationConfig.titleSettings?.backButtonDisplayMode ?? .default
             vc.navigationItem.titleView = routeWithTitle.navigationConfig.titleContent
             navigation.pushViewController(vc, animated: true)
