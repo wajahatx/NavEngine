@@ -48,7 +48,7 @@ public struct TitleConfiguration: Equatable {
        - title: The title text to display in the navigation bar. Pass `nil` for no title.
        - backButtonDisplayMode: The display mode for the back button in the navigation bar.
      */
-    public init(title: String?, backButtonDisplayMode: UINavigationItem.BackButtonDisplayMode) {
+    public init(title: String?, backButtonDisplayMode: UINavigationItem.BackButtonDisplayMode? = .default) {
         self.title = title
         self.backButtonDisplayMode = backButtonDisplayMode
     }
